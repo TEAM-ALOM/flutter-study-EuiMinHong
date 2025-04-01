@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "838911968193",
+    "project_id": "arom-study-quiz",
+    "storage_bucket": "arom-study-quiz.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:838911968193:android:c733b9bd5a9b9c560ae540",
+        "android_client_info": {
+          "package_name": "com.example.arom_study_quiz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAgGVZr6ADusxKudKFMfRHqsUzUn7OpFvA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
