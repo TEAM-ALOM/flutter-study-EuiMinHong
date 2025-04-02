@@ -1,32 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirebaseService {
-  Future<void> saveCorrectAnswerToFirestore({
-    required String question,
+  // Firestore 인스턴스
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Firestore에 데이터 저장
+  Future<void> saveQuizData({
+    required String quiz,
     required String answer,
+    required bool isCorrect,
   }) async {
     try {
-      await FirebaseFirestore.instance.collection('quiz_info').add({
-        'question': question,
-        'correct_answer': answer,
+      await _firestore.collection('quiz').add({
+        'quiz': quiz,
+        'answer': answer,
+        'isCorrect': isCorrect,
+        'createdAt': FieldValue.serverTimestamp(),
       });
-      print('✅ 정답 저장 완료!');
+      print("데이터 저장 성공");
     } catch (e) {
-      print('❌ 정답 저장 실패: $e');
-    }
-  }
-
-  Future<void> checkDocument({required String address}) async {
-    try {
-      final doc = await FirebaseFirestore.instance.doc(address).get();
-
-      if (doc.exists) {
-        print("✅ testDoc 데이터: ${doc.data()}");
-      } else {
-        print("⚠️ testDoc 문서가 존재하지 않습니다.");
-      }
-    } catch (e) {
-      print("❌ 문서 확인 중 오류 발생: $e");
+      print("데이터 저장 실패: $e");
     }
   }
 }
