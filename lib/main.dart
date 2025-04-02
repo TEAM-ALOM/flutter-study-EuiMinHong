@@ -1,11 +1,12 @@
-import 'package:arom_study_quiz/firebase_options.dart';
+//import 'package:arom_study_quiz/firebase_options.dart';
 import 'package:arom_study_quiz/screens/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(); // Firestore 초기화
+
   runApp(const MyApp());
 }
 

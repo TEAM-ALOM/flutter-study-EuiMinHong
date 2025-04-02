@@ -1,6 +1,7 @@
 import 'package:arom_study_quiz/services/api_service.dart';
-import 'package:flutter/material.dart';
 import 'package:arom_study_quiz/services/firebase_service.dart';
+import 'package:flutter/material.dart';
+import 'package:html_unescape/html_unescape.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,19 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       // 앱바
-      appBar: AppBar(
-        title: Text('랜덤 퀴즈'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: () async {
-              final snapshot = await futureQuiz;
-              final question = snapshot['results'][0]['question'];
-              FirebaseService().checkDocument(address: 'quiz_info/$question');
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text('랜덤 퀴즈')),
 
       // 바디
       body: Padding(
@@ -59,8 +48,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   final resultData =
                       snapshot.data!['results'][0]; //사용하기 쉽게 변수에 저장
 
-                  final correctAnswer = resultData['correct_answer'];
-                  final incorrectAnswers = resultData['incorrect_answers'];
+                  HtmlUnescape unescape = HtmlUnescape();
+                  final correctAnswer = unescape.convert(
+                    resultData['correct_answer'],
+                  );
+                  final incorrectAnswers =
+                      (resultData['incorrect_answers'] as List)
+                          .map((answer) => unescape.convert(answer))
+                          .toList();
                   // 정답이랑 오답이랑 합친 List
                   final answers = [
                     correctAnswer, // 얘는 정답이어서 리스트가 아닌 문자열
@@ -72,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       // 질문 출력
                       Text(
-                        "${resultData['question']}",
+                        unescape.convert(resultData['question']),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
@@ -90,11 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 onPressed: () {
                                   if (answer == correctAnswer) {
                                     print('정답입니다!');
-                                    FirebaseService()
-                                        .saveCorrectAnswerToFirestore(
-                                          question: resultData['question'],
-                                          answer: correctAnswer,
-                                        );
                                   } else {
                                     print('오답입니다!');
                                   }
@@ -115,12 +105,26 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: const Text('새로운 문제'),
                         ),
                       ),
+                      const SizedBox(height: 20),
+                      // Firebase에 저장 버튼
+                      IconButton(
+                        icon: const Icon(Icons.save),
+                        iconSize: 40,
+                        onPressed: () async {
+                          print("Firebase에 저장합니다.");
+                          FirebaseService().saveQuizData(
+                            quiz: unescape.convert(resultData['question']),
+                            answer: correctAnswer,
+                            isCorrect: true,
+                          );
+                        },
+                      ),
                     ],
                   );
                 } else if (snapshot.hasError) {
                   return Text('${snapshot.error}');
                 } else {
-                  return const CircularProgressIndicator();
+                  return Center(child: const CircularProgressIndicator());
                 }
               },
             ),
