@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       // 앱바
-      appBar: AppBar(title: Text('랜덤 퀴즈')),
+      appBar: AppBar(title: Text('랜덤 퀴즈ccc')),
 
       // 바디
       body: Padding(
