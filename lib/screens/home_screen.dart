@@ -1,5 +1,6 @@
 import 'package:arom_study_quiz/services/api_service.dart';
 import 'package:arom_study_quiz/services/firebase_service.dart';
+import 'package:arom_study_quiz/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:html_unescape/html_unescape.dart';
 
@@ -31,7 +32,20 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       // 앱바
-      appBar: AppBar(title: Text('랜덤 퀴즈ccc')),
+      appBar: AppBar(
+        title: Text('랜덤 퀴즈'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+          ),
+        ],
+      ),
 
       // 바디
       body: Padding(

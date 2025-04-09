@@ -1,44 +1,20 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-class LoginService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+Future<UserCredential> signInWithGoogle() async {
+  // 구글 로그인 실행
+  final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
-  // Google 로그인
-  Future<User?> signInWithGoogle() async {
-    try {
-      // Google Sign-In 시도
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+  // 인증 정보 획득
+  final GoogleSignInAuthentication googleAuth =
+      await googleUser!.authentication;
 
-      if (googleUser == null) {
-        return null; // 로그인 취소
-      }
+  // Firebase 자격 증명 생성
+  final credential = GoogleAuthProvider.credential(
+    accessToken: googleAuth.accessToken,
+    idToken: googleAuth.idToken,
+  );
 
-      // Google 인증 정보를 Firebase로 전달
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // Firebase 로그인
-      final UserCredential userCredential = await _auth.signInWithCredential(
-        credential,
-      );
-      final User? user = userCredential.user;
-      return user;
-    } catch (e) {
-      print('Error during Google sign-in: $e');
-      return null;
-    }
-  }
-
-  // 로그아웃
-  Future<void> signOut() async {
-    await _googleSignIn.signOut();
-    await _auth.signOut();
-  }
+  // Firebase에 로그인
+  return await FirebaseAuth.instance.signInWithCredential(credential);
 }
