@@ -1,6 +1,7 @@
 import 'package:arom_study_quiz/services/api_service.dart';
 import 'package:arom_study_quiz/services/firebase_service.dart';
 import 'package:arom_study_quiz/screens/login_screen.dart';
+import 'package:arom_study_quiz/screens/wrong_note_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:html_unescape/html_unescape.dart';
 
@@ -12,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
   late Future<Map<String, dynamic>> futureQuiz;
 
   // 초기화
@@ -28,27 +30,17 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // 앱바
-      appBar: AppBar(
-        title: Text('랜덤 퀴즈'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
-            },
-          ),
-        ],
-      ),
-
-      // 바디
-      body: Padding(
+    final List<Widget> screens = [
+      // 기존 홈 퀴즈 화면
+      Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -96,42 +88,45 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () {
+                                onPressed: () async {
                                   if (answer == correctAnswer) {
                                     print('정답입니다!');
+                                    FirebaseService().saveQuizData(
+                                      quiz: unescape.convert(
+                                        resultData['question'],
+                                      ),
+                                      answer: correctAnswer,
+                                      isCorrect: true,
+                                    );
                                   } else {
                                     print('오답입니다!');
+                                    FirebaseService().saveQuizData(
+                                      quiz: unescape.convert(
+                                        resultData['question'],
+                                      ),
+                                      answer: answer,
+                                      isCorrect: false,
+                                    );
+                                    // 오답만 Firestore에 저장
+                                    await FirebaseService().saveWrongAnswer(
+                                      quiz: unescape.convert(resultData['question']),
+                                      correctAnswer: correctAnswer,
+                                      selectedAnswer: answer,
+                                    );
                                   }
+                                  loadNewQuiz();
                                 },
                                 child: Text(answer),
                               ),
                             ),
                           ],
                         ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 20),
 
                       // 새로운 문제 버튼
-                      IgnorePointer(
-                        ignoring:
-                            snapshot.connectionState == ConnectionState.waiting,
-                        child: ElevatedButton(
-                          onPressed: loadNewQuiz,
-                          child: const Text('새로운 문제'),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Firebase에 저장 버튼
-                      IconButton(
-                        icon: const Icon(Icons.save),
-                        iconSize: 40,
-                        onPressed: () async {
-                          print("Firebase에 저장합니다.");
-                          FirebaseService().saveQuizData(
-                            quiz: unescape.convert(resultData['question']),
-                            answer: correctAnswer,
-                            isCorrect: true,
-                          );
-                        },
+                      ElevatedButton(
+                        onPressed: loadNewQuiz,
+                        child: const Text('다음 문제'),
                       ),
                     ],
                   );
@@ -144,6 +139,39 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+      ),
+      // 오답노트 화면
+      const WrongNoteScreen(),
+    ];
+    return Scaffold(
+      // 앱바
+      appBar: AppBar(
+        title: Text('랜덤 퀴즈'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+
+      // 바디
+      body: screens[_selectedIndex],
+
+      // 바텀 네비게이션 바
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: '퀴즈'),
+          BottomNavigationBarItem(icon: Icon(Icons.note), label: '오답노트'),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.blue,
+        onTap: _onItemTapped,
       ),
     );
   }
