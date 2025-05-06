@@ -6,11 +6,13 @@ class RetakeQuizScreen extends StatefulWidget {
   final String quiz;
   final String correctAnswer;
   final String docId; // Firestore 문서 ID
+  final List<String> incorrectAnswers; // 오답 리스트
   const RetakeQuizScreen({
     super.key,
     required this.quiz,
     required this.correctAnswer,
     required this.docId,
+    required this.incorrectAnswers,
   });
 
   @override
@@ -18,14 +20,25 @@ class RetakeQuizScreen extends StatefulWidget {
 }
 
 class _RetakeQuizScreenState extends State<RetakeQuizScreen> {
-  final _controller = TextEditingController();
+  String? _selectedAnswer;
   bool _showError = false;
   bool _isSubmitting = false;
+  late List<String> _shuffledAnswers;
+
+  @override
+  void initState() {
+    super.initState();
+    // 정답과 오답을 합쳐서 섞기
+    _shuffledAnswers = [widget.correctAnswer, ...widget.incorrectAnswers];
+    _shuffledAnswers.shuffle();
+  }
 
   Future<void> _submit() async {
-    setState(() { _isSubmitting = true; });
-    if (_controller.text.trim() == widget.correctAnswer) {
-      // Firestore에서 오답 삭제
+    setState(() {
+      _isSubmitting = true;
+    });
+    // 선택한 답이 정답이면 Firestore에서 오답 삭제
+    if (_selectedAnswer == widget.correctAnswer) {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         await FirebaseFirestore.instance
@@ -35,14 +48,16 @@ class _RetakeQuizScreenState extends State<RetakeQuizScreen> {
             .doc(widget.docId)
             .delete();
       }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('정답! 오답노트에서 삭제되었습니다.')),
-        );
-        Navigator.of(context).pop(true); // 성공적으로 풀었음을 반환
-      }
+      if (!mounted) return; // dispose된 context 방지
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('정답! 오답노트에서 삭제되었습니다.')),
+      );
+      Navigator.of(context).pop(true); // 성공적으로 풀었음을 반환
     } else {
-      setState(() { _showError = true; _isSubmitting = false; });
+      setState(() {
+        _showError = true;
+        _isSubmitting = false;
+      });
     }
   }
 
@@ -55,12 +70,33 @@ class _RetakeQuizScreenState extends State<RetakeQuizScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(widget.quiz, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _controller,
-              decoration: const InputDecoration(labelText: '정답을 입력하세요'),
+            Text(
+              widget.quiz,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 24),
+            // 정답 + 오답을 섞어서 객관식 버튼으로 표시
+            for (final answer in _shuffledAnswers)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        _selectedAnswer == answer ? Colors.blueAccent : null,
+                  ),
+                  onPressed:
+                      _isSubmitting
+                          ? null
+                          : () {
+                            setState(() {
+                              _selectedAnswer = answer;
+                              _showError = false;
+                            });
+                          },
+                  child: Text(answer),
+                ),
+              ),
             if (_showError)
               const Padding(
                 padding: EdgeInsets.only(top: 8.0),
@@ -68,8 +104,12 @@ class _RetakeQuizScreenState extends State<RetakeQuizScreen> {
               ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _isSubmitting ? null : _submit,
-              child: _isSubmitting ? const CircularProgressIndicator() : const Text('제출'),
+              onPressed:
+                  _isSubmitting || _selectedAnswer == null ? null : _submit,
+              child:
+                  _isSubmitting
+                      ? const CircularProgressIndicator()
+                      : const Text('제출'),
             ),
           ],
         ),
@@ -77,3 +117,11 @@ class _RetakeQuizScreenState extends State<RetakeQuizScreen> {
     );
   }
 }
+
+// 사용 예시 및 전달 방법:
+// RetakeQuizScreen(
+//   quiz: data['quiz'],
+//   correctAnswer: data['correctAnswer'],
+//   docId: docId,
+//   incorrectAnswers: List<String>.from(data['incorrectAnswers'] ?? []),
+// )

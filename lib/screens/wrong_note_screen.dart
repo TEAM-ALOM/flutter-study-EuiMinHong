@@ -49,7 +49,7 @@ class WrongNoteScreen extends StatelessWidget {
                   trailing: ElevatedButton(
                     child: const Text('다시 풀기'),
                     onPressed: () async {
-                      // RetakeQuizScreen으로 이동
+                      // Firestore에서 문제의 오답 리스트도 함께 전달
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -58,10 +58,14 @@ class WrongNoteScreen extends StatelessWidget {
                                 quiz: data['quiz'] ?? '',
                                 correctAnswer: data['correctAnswer'] ?? '',
                                 docId: docId,
+                                incorrectAnswers: List<String>.from(
+                                  data['incorrectAnswers'] ?? [],
+                                ),
                               ),
                         ),
                       );
                       // 맞으면 오답에서 삭제 안내
+                      if (!context.mounted) return;
                       if (result == true) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('오답에서 삭제되었습니다!')),

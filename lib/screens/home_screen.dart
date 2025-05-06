@@ -109,9 +109,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                     );
                                     // 오답만 Firestore에 저장
                                     await FirebaseService().saveWrongAnswer(
-                                      quiz: unescape.convert(resultData['question']),
+                                      quiz: unescape.convert(
+                                        resultData['question'],
+                                      ),
                                       correctAnswer: correctAnswer,
                                       selectedAnswer: answer,
+                                      incorrectAnswers:
+                                          (resultData['incorrect_answers']
+                                                  as List)
+                                              .map((a) => unescape.convert(a))
+                                              .toList(),
+                                      category: resultData['category'] ?? '',
+                                      difficulty:
+                                          resultData['difficulty'] ?? '',
+                                      type: resultData['type'],
                                     );
                                   }
                                   loadNewQuiz();
